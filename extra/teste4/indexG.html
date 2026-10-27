@@ -1,0 +1,266 @@
+<!-- ================= 03 BACKEND ================= -->
+<section class="layer" id="backend" style="--accent-color: var(--l3)">
+  <div class="layer__head">
+    <span class="big-num">03</span>
+    <h2>Backend — server.js</h2>
+    <span class="tag">~45 min</span>
+  </div>
+
+  <h3 class="topic">1. Setup do Express + conexão com o banco</h3>
+  <p class="topic-desc">
+    Importação das dependências essenciais (Express, PG, Multer, Path),
+    configuração do middleware para servir arquivos estáticos na pasta
+    <code>public</code> e criação do pool de conexões com o banco de dados
+    PostgreSQL (<code>autovision</code>).
+  </p>
+  <pre><code><span class="tg">const</span> express = require(<span class="st">'express'</span>);
+<span class="tg">const</span> { Pool } = require(<span class="st">'pg'</span>);
+<span class="tg">const</span> multer = require(<span class="st">'multer'</span>);
+<span class="tg">const</span> path = require(<span class="st">'path'</span>);
+
+<span class="tg">const</span> app = express();
+app.use(express.json());
+app.use(express.static(<span class="st">'public'</span>)); <span class="cm">// serve index.html, style.css, app.js, assets, uploads</span>
+
+<span class="tg">const</span> pool = <span class="tg">new</span> Pool({
+  user: <span class="st">'postgres'</span>,
+  password: <span class="st">'Senai1510'</span>,
+  host: <span class="st">'localhost'</span>,
+  port: <span class="st">5432</span>,
+  database: <span class="st">'autovision'</span>
+});</code></pre>
+
+  <h3 class="topic">2. Upload de imagem com multer</h3>
+  <p class="topic-desc">
+    Configuração do armazenamento em disco (<code>diskStorage</code>) do Multer
+    para salvar as imagens dos veículos na pasta
+    <code>public/uploads</code>. Gera um nome único para cada arquivo combinando
+    a data/hora em milissegundos com a extensão original do arquivo.
+  </p>
+  <pre><code><span class="tg">const</span> storage = multer.diskStorage({
+  destination: <span class="st">'public/uploads'</span>,
+  filename: (req, file, cb) =>
+    cb(<span class="tg">null</span>, Date.now() + path.extname(file.originalname))
+});
+<span class="tg">const</span> upload = multer({ storage });</code></pre>
+
+  <h3 class="topic">3. Vitrine e busca por modelo</h3>
+  <p class="topic-desc">
+    Rota de consulta (<code>GET</code>) que retorna os anúncios cadastrados.
+    Executa um <code>JOIN</code> com a tabela de usuários para incluir os dados
+    do vendedor e um <code>LEFT JOIN</code> agregando a quantidade total de
+    demonstrações de interesse registradas. Permite filtrar dinamicamente por
+    modelo através da query string <code>?modelo=</code>.
+  </p>
+  <pre><code>app.get(<span class="st">'/api/anuncios'</span>, <span class="tg">async</span> (req, res) => {
+  <span class="tg">const</span> { modelo } = req.query;
+  <span class="tg">const</span> params = [];
+
+  <span class="tg">let</span> query = <span class="st">`
+    SELECT a.id, a.titulo, a.local, a.preco, a.imagem,
+           u.nome AS vendedor, u.usuario AS vendedor_usuario, u.telefone AS vendedor_telefone,
+           COUNT(i.id)::int AS interesses
+    FROM anuncios a
+    JOIN usuarios u ON u.id = a.vendedor_id
+    LEFT JOIN interesses i ON i.anuncio_id = a.id
+  `</span>;
+
+  <span class="tg">if</span> (modelo) {
+    params.push(<span class="st">`%${modelo}%`</span>);
+    query += <span class="st">` WHERE a.titulo ILIKE $${params.length}`</span>;
+  }
+
+  query +=
+    <span class="st">' GROUP BY a.id, u.nome, u.usuario, u.telefone ORDER BY a.criado_em DESC'</span>;
+
+  <span class="tg">const</span> { rows } = <span class="tg">await</span> pool.query(query, params);
+  res.json(rows);
+});</code></pre>
+  <div class="note">
+    A rota busca os anúncios cadastrados realizando o
+    <code>JOIN</code> com os dados do vendedor e contabilizando a quantidade
+    total de interesses com <code>COUNT(i.id)</code>. Permite filtrar os
+    anúncios pelo título/modelo do veículo via parâmetro de query
+    <code>?modelo=</code>.
+  </div>
+
+  <h3 class="topic">4. Rota de login</h3>
+  <p class="topic-desc">
+    Endpoint de autenticação via <code>POST</code>. Valida as credenciais
+    (usuário e senha) no banco de dados PostgreSQL. Se as credenciais forem
+    válidas, retorna os dados cadastrais do vendedor; caso contrário, retorna
+    HTTP Status <code>401</code> informando o erro.
+  </p>
+  <pre><code>app.post(<span class="st">'/api/login'</span>, <span class="tg">async</span> (req, res) => {
+  <span class="tg">const</span> { usuario, senha } = req.body;
+  <span class="tg">const</span> { rows } = <span class="tg">await</span> pool.query(
+    <span class="st">'SELECT id, nome, usuario, telefone, foto_perfil FROM usuarios WHERE usuario = $1 AND senha = $2'</span>,
+    [usuario, senha]
+  );
+  <span class="tg">if</span> (rows.length === <span class="st">0</span>) {
+    <span class="tg">return</span> res
+      .status(<span class="st">401</span>)
+      .json({ erro: <span class="st">'Usuário não encontrado ou senha incorreta'</span> });
+  }
+  res.json(rows[<span class="st">0</span>]);
+});</code></pre>
+
+  <h3 class="topic">5. Registrar interesse no anúncio</h3>
+  <p class="topic-desc">
+    Registra no banco a demonstração de interesse efetuada por qualquer
+    visitante da plataforma. Insere o nome e contato fornecidos na tabela
+    <code>interesses</code> e retorna o novo total de interações acumuladas
+    naquele anúncio.
+  </p>
+  <pre><code>app.post(<span class="st">'/api/interesses/:anuncioId'</span>, <span class="tg">async</span> (req, res) => {
+  <span class="tg">const</span> { anuncioId } = req.params;
+  <span class="tg">const</span> { cliente_nome, cliente_contato } = req.body;
+
+  <span class="tg">if</span> (!cliente_nome || !cliente_contato) {
+    <span class="tg">return</span> res.status(<span class="st">400</span>).json({ erro: <span class="st">'Nome e contato são obrigatórios'</span> });
+  }
+
+  <span class="tg">await</span> pool.query(
+    <span class="st">'INSERT INTO interesses (anuncio_id, cliente_nome, cliente_contato) VALUES ($1, $2, $3)'</span>,
+    [anuncioId, cliente_nome, cliente_contato]
+  );
+
+  <span class="tg">const</span> { rows } = <span class="tg">await</span> pool.query(
+    <span class="st">'SELECT COUNT(*)::int AS total FROM interesses WHERE anuncio_id = $1'</span>,
+    [anuncioId]
+  );
+  res.json({ interesses: rows[<span class="st">0</span>].total });
+});</code></pre>
+  <div class="note">
+    Como os clientes não possuem conta cadastrada, o nome e contato fornecidos
+    no formulário de interesse são gravados diretamente na tabela
+    <code>interesses</code> associados ao ID do anúncio.
+  </div>
+
+  <h3 class="topic">6. Perfil do vendedor (menu lateral)</h3>
+  <p class="topic-desc">
+    Consulta consolidada que busca os veículos publicados por um determinado
+    vendedor (<code>vendedor_id</code>), calculando tanto a contagem de anúncios
+    quanto o somatório total de interesses recebidos em todas as suas
+    publicações.
+  </p>
+  <pre><code>app.get(<span class="st">'/api/perfil/:id'</span>, <span class="tg">async</span> (req, res) => {
+  <span class="tg">const</span> { id } = req.params;
+  <span class="tg">const</span> anuncios = <span class="tg">await</span> pool.query(
+    <span class="st">`
+    SELECT a.id, a.titulo, a.local, a.preco, a.imagem, COUNT(i.id)::int AS interesses
+    FROM anuncios a LEFT JOIN interesses i ON i.anuncio_id = a.id
+    WHERE a.vendedor_id = $1 GROUP BY a.id ORDER BY a.criado_em DESC
+  `</span>,
+    [id]
+  );
+
+  <span class="tg">const</span> totalInteresses = anuncios.rows.reduce(
+    (acc, a) => acc + a.interesses,
+    <span class="st">0</span>
+  );
+
+  res.json({
+    totalAnuncios: anuncios.rows.length,
+    totalInteresses,
+    anuncios: anuncios.rows
+  });
+});</code></pre>
+
+  <h3 class="topic">7. Cadastrar e excluir anúncio</h3>
+  <p class="topic-desc">
+    Endpoints para gerenciamento de anúncios. O método
+    <code>POST</code> processa o formulário multipart enviando a imagem via
+    Multer e salvando as informações no banco. O método
+    <code>DELETE</code> remove permanentemente o anúncio informado pelo seu
+    identificador (<code>id</code>).
+  </p>
+  <pre><code>app.post(<span class="st">'/api/anuncios'</span>, upload.single(<span class="st">'imagem'</span>), <span class="tg">async</span> (req, res) => {
+  <span class="tg">const</span> { titulo, local, preco, vendedor_id } = req.body;
+  <span class="tg">if</span> (!req.file) <span class="tg">return</span> res.status(<span class="st">400</span>).json({ erro: <span class="st">'Imagem obrigatória'</span> });
+
+  <span class="tg">const</span> { rows } = <span class="tg">await</span> pool.query(
+    <span class="st">'INSERT INTO anuncios (titulo, local, preco, imagem, vendedor_id) VALUES ($1, $2, $3, $4, $5) RETURNING *'</span>,
+    [titulo, local, preco, req.file.filename, vendedor_id]
+  );
+  res.json(rows[<span class="st">0</span>]);
+});
+
+app.delete(<span class="st">'/api/anuncios/:id'</span>, <span class="tg">async</span> (req, res) => {
+  <span class="tg">await</span> pool.query(<span class="st">'DELETE FROM anuncios WHERE id = $1'</span>, [req.params.id]);
+  res.json({ ok: <span class="tg">true</span> });
+});</code></pre>
+
+  <h3 class="topic">8. Enviar mensagem ao vendedor</h3>
+  <p class="topic-desc">
+    Recebe as mensagens diretas digitadas pelos potenciais compradores no modal,
+    armazenando o nome, contato e o texto enviado na tabela
+    <code>mensagens</code>. Por fim, inicia a execução do servidor Express
+    escutando na porta local 3000.
+  </p>
+  <pre><code>app.post(<span class="st">'/api/mensagens/:anuncioId'</span>, <span class="tg">async</span> (req, res) => {
+  <span class="tg">const</span> { anuncioId } = req.params;
+  <span class="tg">const</span> { cliente_nome, cliente_contato, mensagem } = req.body;
+
+  <span class="tg">if</span> (!cliente_nome || !cliente_contato || !mensagem) {
+    <span class="tg">return</span> res
+      .status(<span class="st">400</span>)
+      .json({ erro: <span class="st">'Nome, contato e mensagem são obrigatórios'</span> });
+  }
+
+  <span class="tg">await</span> pool.query(
+    <span class="st">'INSERT INTO mensagens (anuncio_id, cliente_nome, cliente_contato, mensagem) VALUES ($1, $2, $3, $4)'</span>,
+    [anuncioId, cliente_nome, cliente_contato, mensagem]
+  );
+
+  res.json({ ok: <span class="tg">true</span> });
+});
+
+</code></pre>
+
+  <table class="ref">
+    <tr>
+      <th>Rota</th>
+      <th>Método</th>
+      <th>Usada por</th>
+    </tr>
+    <tr>
+      <td><code>/api/anuncios</code></td>
+      <td>GET</td>
+      <td>
+        Vitrine inicial e busca por modelo do veículo (via
+        <code>?modelo=</code>)
+      </td>
+    </tr>
+    <tr>
+      <td><code>/api/login</code></td>
+      <td>POST</td>
+      <td>Formulário de login de vendedores</td>
+    </tr>
+    <tr>
+      <td><code>/api/interesses/:anuncioId</code></td>
+      <td>POST</td>
+      <td>Modal de demonstração de interesse (nome e contato)</td>
+    </tr>
+    <tr>
+      <td><code>/api/perfil/:id</code></td>
+      <td>GET</td>
+      <td>Menu lateral "Ver Perfil" do vendedor</td>
+    </tr>
+    <tr>
+      <td><code>/api/anuncios</code></td>
+      <td>POST</td>
+      <td>Formulário de cadastro de veículo</td>
+    </tr>
+    <tr>
+      <td><code>/api/anuncios/:id</code></td>
+      <td>DELETE</td>
+      <td>Ícone de exclusão em "Seus anúncios"</td>
+    </tr>
+    <tr>
+      <td><code>/api/mensagens/:anuncioId</code></td>
+      <td>POST</td>
+      <td>Modal de envio de mensagem para o vendedor</td>
+    </tr>
+  </table>
+</section>

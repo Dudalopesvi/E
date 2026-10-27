@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guia — Rede Social e E-commerce (Node + Express + PostgreSQL)</title>
+<style>
+:root{--bg:#11161c;--surface:#171e26;--surface-2:#1d2530;--border:#2a3441;--text:#e7e4da;--muted:#8d97a3;--accent:#e8a33d;
+--l1:#ff6b4a;--l2:#60a5fa;--l3:#4ade80;--l4:#c084fc;--l5:#94a3b8;
+--display:'Palatino Linotype',Palatino,'Iowan Old Style',Georgia,serif;
+--body:-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
+--mono:'SF Mono',Consolas,Menlo,'Liberation Mono',monospace}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.6}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.spine{position:sticky;top:0;height:100vh;border-right:1px solid var(--border);background:var(--surface);padding:28px 20px;overflow-y:auto}
+.spine h1{font-family:var(--display);font-size:1.1rem;margin:0 0 4px}
+.spine p{font-size:.78rem;color:var(--muted);margin:0 0 22px}
+.nav{list-style:none;margin:0;padding:0}
+.nav a{display:flex;gap:12px;align-items:center;padding:9px 6px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:.92rem}
+.nav a:hover,.nav a.active{color:var(--text);background:var(--surface-2)}
+.nav .n{width:28px;height:28px;flex:0 0 28px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font:.72rem var(--mono)}
+.nav a.active .n{border-color:var(--dot);color:var(--dot)}
+.nav li:nth-child(1){--dot:var(--l5)}.nav li:nth-child(2){--dot:var(--l1)}.nav li:nth-child(3){--dot:var(--l2)}.nav li:nth-child(4){--dot:var(--l3)}.nav li:nth-child(5){--dot:var(--l4)}.nav li:nth-child(6){--dot:var(--accent)}
+main{padding:48px 56px 120px;max-width:920px}
+.switch{position:sticky;top:0;z-index:5;display:flex;gap:8px;padding:12px 0;background:var(--bg);margin-bottom:8px}
+.switch button{flex:1;font:inherit;font-size:.92rem;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer}
+.switch button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+body[data-dom=social] #bSocial,body[data-dom=shop] #bShop{color:var(--text);border-color:var(--accent);background:var(--surface-2)}
+body[data-dom=social] .shop,body[data-dom=shop] .social{display:none}
+h1.t{font-family:var(--display);font-size:2rem;margin:20px 0 10px}
+.lead{color:var(--muted);max-width:66ch}
+section{margin-top:84px;scroll-margin-top:70px}
+.head{display:flex;align-items:baseline;gap:16px;padding-bottom:14px;border-bottom:2px solid var(--c);margin-bottom:28px}
+.head h2{font-family:var(--display);font-size:1.6rem;margin:0}
+.head .tag{margin-left:auto;font:.7rem var(--mono);color:var(--c);border:1px solid var(--c);padding:3px 8px;border-radius:5px}
+h3{font-size:1.05rem;margin:34px 0 6px;padding-left:12px;border-left:4px solid var(--c)}
+p.d{color:var(--muted);margin:0 0 12px;font-size:.95rem;max-width:68ch}
+pre{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--c);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:0 0 8px}
+code{font-family:var(--mono);font-size:.82rem;color:#cdd6de}
+p code,li code,td code{background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.note{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:.88rem;color:var(--muted);margin:14px 0 26px}
+.note b{color:var(--text)}.note.warn{border-color:rgba(232,163,61,.45)}.note.warn b{color:var(--accent)}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.87rem;margin:6px 0 26px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:.78rem}
+ul.ck{padding-left:18px;color:var(--muted);font-size:.92rem}ul.ck li{margin-bottom:9px}ul.ck strong{color:var(--text)}
+@media(max-width:860px){.app{grid-template-columns:1fr}.spine{position:static;height:auto;border-right:0;border-bottom:1px solid var(--border)}main{padding:28px 18px 90px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body data-dom="social">
+<div class="app">
+<aside class="spine">
+<h1>Guia Full Stack</h1>
+<p>Rede social e e-commerce<br>Node · Express · PostgreSQL · JS puro</p>
+<ul class="nav">
+<li><a href="#visao"><span class="n">00</span>Do AutoVision para cá</a></li>
+<li><a href="#setup"><span class="n">01</span>Setup</a></li>
+<li><a href="#banco"><span class="n">02</span>Banco de dados</a></li>
+<li><a href="#backend"><span class="n">03</span>Backend</a></li>
+<li><a href="#front"><span class="n">04</span>Front-end</a></li>
+<li><a href="#check"><span class="n">05</span>Checklist e armadilhas</a></li>
+</ul>
+</aside>
+<main>
+<div class="switch" role="group" aria-label="Escolher tema">
+<button id="bSocial" type="button">Rede social</button>
+<button id="bShop" type="button">E-commerce</button>
+</div>
+<h1 class="t">Rede social e e-commerce, com a mesma stack do AutoVision</h1>
+<p class="lead">Escolha o tema acima: o banco, as rotas e o front mudam; setup e checklist valem para os dois. Os blocos de código são esqueletos para você entender e adaptar, não para colar sem ler.</p>
+
+<section id="visao" style="--c:var(--l5)">
+<div class="head"><h2>Do AutoVision para cá</h2><span class="tag">mapa mental</span></div>
+<p class="d">Quase toda prova desse tipo é o mesmo problema com outro vocabulário. Descobrir qual peça do AutoVision corresponde a qual peça nova é metade do trabalho.</p>
+<div class="tw"><table>
+<tr><th>AutoVision</th><th class="social">Rede social</th><th class="shop">E-commerce</th></tr>
+<tr><td>Vendedor (login)</td><td class="social">Usuário (funcionário ou cliente)</td><td class="shop">Cliente (e/ou lojista)</td></tr>
+<tr><td>Anúncio</td><td class="social">Atividade (corrida, caminhada, trilha)</td><td class="shop">Produto</td></tr>
+<tr><td>Interesse (contador)</td><td class="social">Curtida (toggle)</td><td class="shop">Item no carrinho</td></tr>
+<tr><td>Mensagem ao vendedor</td><td class="social">Comentário</td><td class="shop">Pedido (com itens)</td></tr>
+<tr><td>Busca por modelo (<code>ILIKE</code>)</td><td class="social">Filtro por tipo de atividade</td><td class="shop">Busca de produtos</td></tr>
+<tr><td>Perfil do vendedor</td><td class="social">Perfil + minhas atividades</td><td class="shop">Meus pedidos</td></tr>
+</table></div>
+<div class="note warn"><b>Diferença que muda tudo no e-commerce:</b> dinheiro e estoque. Preço e total nunca podem vir do front-end, e o pedido precisa de transação. Isso não existia no AutoVision.</div>
+</section>
+
+<section id="setup" style="--c:var(--l1)">
+<div class="head"><h2>Setup</h2><span class="tag">~10 min</span></div>
+<h3>Comandos iniciais</h3>
+<pre><code>npm init -y
+npm install express pg multer
+mkdir public public/uploads public/assets
+node --watch server.js</code></pre>
+<h3>Arquitetura</h3>
+<pre><code>projeto/
+├── public/
+│   ├── uploads/     // vazia, mas precisa existir
+│   ├── index.html
+│   ├── style.css
+│   └── app.js
+├── schema.sql
+└── server.js</code></pre>
+<h3>Base do server.js</h3>
+<pre><code>const express = require('express');
+const { Pool } = require('pg');
+const multer = require('multer');
+const app = express();
+const pool = new Pool({ user:'postgres', host:'localhost', database:'meubanco', password:'senha', port:5432 });
+
+app.use(express.json());
+app.use(express.static('public'));
+const upload = multer({ dest: 'public/uploads/' });
+
+// ... rotas aqui ...
+app.listen(3000, () =&gt; console.log('http://localhost:3000'));</code></pre>
+<div class="note warn"><b>Atalho de prova, não de produto:</b> guardar o usuário logado numa variável do front e senha em texto puro economiza tempo no exame. Em qualquer projeto real (portfólio incluído), use <code>bcrypt</code> e sessão ou JWT. Se um recrutador abrir seu GitHub e ver senha em texto puro, isso conta contra você.</div>
+</section>
+
+<section id="banco" style="--c:var(--l2)">
+<div class="head"><h2>Banco de dados</h2><span class="tag">~25 min</span></div>
+
+<div class="social">
+<h3>Tabelas da rede social (schema.sql)</h3>
+<p class="d">São só estas quatro tabelas. O <code>UNIQUE (usuario_id, atividade_id)</code> em <code>tb_curtida</code> impede curtida duplicada direto no banco. Repare que nenhuma chave estrangeira tem <code>ON DELETE CASCADE</code>: isso afeta a exclusão (veja o backend).</p>
+<pre><code>-- schema.sql
+CREATE TABLE tb_usuarios (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(150) NOT NULL,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  nome_usuario VARCHAR(150) NOT NULL,
+  senha VARCHAR(100) NOT NULL,
+  foto VARCHAR(255),
+  tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('funcionario', 'cliente')),
+  createdat TIMESTAMP NOT NULL DEFAULT NOW(),
+  updatedat TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE tb_atividade (
+  id SERIAL PRIMARY KEY,
+  tipo_atividade VARCHAR(20) NOT NULL CHECK (tipo_atividade IN ('corrida', 'caminhada', 'trilha')),
+  distancia_percorrida INTEGER NOT NULL,   -- em metros
+  duracao_atividade INTEGER NOT NULL,      -- em minutos
+  quantidade_calorias INTEGER NOT NULL,
+  createdat TIMESTAMP NOT NULL DEFAULT NOW(),
+  updatedat TIMESTAMP NOT NULL DEFAULT NOW(),
+  usuario_id INTEGER NOT NULL REFERENCES tb_usuarios(id)
+);
+
+CREATE TABLE tb_curtida (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES tb_usuarios(id),
+  atividade_id INTEGER NOT NULL REFERENCES tb_atividade(id),
+  createdat TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE (usuario_id, atividade_id)
+);
+
+CREATE TABLE tb_comentario (
+  id SERIAL PRIMARY KEY,
+  usuario_id INTEGER NOT NULL REFERENCES tb_usuarios(id),
+  atividade_id INTEGER NOT NULL REFERENCES tb_atividade(id),
+  texto VARCHAR(500) NOT NULL,
+  createdat TIMESTAMP NOT NULL DEFAULT NOW()
+);</code></pre>
+<h3>Dados de teste</h3>
+<pre><code>INSERT INTO tb_usuarios (nome, email, nome_usuario, senha, tipo) VALUES
+  ('Ana Souza', 'ana@email.com', 'ana', '123', 'cliente'),
+  ('Carlos Lima', 'carlos@email.com', 'carlos', '123', 'funcionario');</code></pre>
+</div>
+
+<div class="shop">
+<h3>Tabelas do e-commerce</h3>
+<p class="d">Repare em <code>preco_unitario</code> em <code>itens_pedido</code>: é uma cópia do preço no momento da compra. Se o produto mudar de preço depois, o pedido antigo continua correto.</p>
+<pre><code>CREATE TABLE clientes (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  senha VARCHAR(100) NOT NULL
+);
+CREATE TABLE produtos (
+  id SERIAL PRIMARY KEY,
+  nome VARCHAR(100) NOT NULL,
+  descricao TEXT,
+  categoria VARCHAR(50),
+  preco NUMERIC(10,2) NOT NULL CHECK (preco &gt; 0),
+  estoque INT NOT NULL DEFAULT 0 CHECK (estoque &gt;= 0),
+  imagem VARCHAR(255) NOT NULL
+);
+CREATE TABLE pedidos (
+  id SERIAL PRIMARY KEY,
+  cliente_id INT NOT NULL REFERENCES clientes(id),
+  total NUMERIC(10,2) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'pendente',
+  criado_em TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE itens_pedido (
+  id SERIAL PRIMARY KEY,
+  pedido_id INT NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
+  produto_id INT NOT NULL REFERENCES produtos(id),
+  quantidade INT NOT NULL CHECK (quantidade &gt; 0),
+  preco_unitario NUMERIC(10,2) NOT NULL
+);</code></pre>
+</div>
+</section>
+
+<section id="backend" style="--c:var(--l3)">
+<div class="head"><h2>Backend — server.js</h2><span class="tag">~45 min</span></div>
+
+<div class="social">
+<h3>Login e cadastro de usuário</h3>
+<p class="d">O login devolve o usuário (sem a senha) e o front guarda em <code>usuarioAtual</code>. O erro <code>23505</code> do Postgres é violação de <code>UNIQUE</code>, aqui o e-mail repetido.</p>
+<pre><code>app.post('/api/login', async (req, res) =&gt; {
+  const { email, senha } = req.body;
+  const { rows } = await pool.query(
+    'SELECT id, nome, nome_usuario, foto, tipo FROM tb_usuarios WHERE email=$1 AND senha=$2',
+    [email, senha]);
+  if (!rows[0]) return res.status(401).json({ erro: 'E-mail ou senha inválidos.' });
+  res.json(rows[0]);
+});
+
+app.post('/api/usuarios', upload.single('foto'), async (req, res) =&gt; {
+  const { nome, email, nome_usuario, senha, tipo } = req.body;
+  if (!nome || !email || !nome_usuario || !senha)
+    return res.status(400).json({ erro: 'Preencha todos os campos.' });
+  if (!['funcionario', 'cliente'].includes(tipo))
+    return res.status(400).json({ erro: 'Tipo inválido.' });
+  const foto = req.file ? '/uploads/' + req.file.filename : null;
+  try {
+    await pool.query(
+      'INSERT INTO tb_usuarios (nome, email, nome_usuario, senha, foto, tipo) VALUES ($1,$2,$3,$4,$5,$6)',
+      [nome, email, nome_usuario, senha, foto, tipo]);
+    res.status(201).json({ ok: true });
+  } catch (e) {
+    if (e.code === '23505') return res.status(409).json({ erro: 'E-mail já cadastrado.' });
+    res.status(500).json({ erro: 'Erro ao cadastrar.' });
+  }
+});</code></pre>
+
+<h3>Feed de atividades</h3>
+<p class="d">Uma query traz a atividade, o autor, os contadores e se o usuário logado já curtiu. O <code>::int</code> é necessário porque <code>COUNT</code> chega como string no <code>pg</code>.</p>
+<pre><code>app.get('/api/atividades', async (req, res) =&gt; {
+  const uid = Number(req.query.usuario_id) || 0;
+  const { rows } = await pool.query(`
+    SELECT a.id, a.tipo_atividade, a.distancia_percorrida, a.duracao_atividade,
+           a.quantidade_calorias, a.createdat, a.usuario_id,
+           u.nome, u.nome_usuario, u.foto,
+      (SELECT COUNT(*) FROM tb_curtida c WHERE c.atividade_id = a.id)::int AS curtidas,
+      (SELECT COUNT(*) FROM tb_comentario m WHERE m.atividade_id = a.id)::int AS comentarios,
+      EXISTS (SELECT 1 FROM tb_curtida c WHERE c.atividade_id = a.id AND c.usuario_id = $1) AS curti
+    FROM tb_atividade a JOIN tb_usuarios u ON u.id = a.usuario_id
+    ORDER BY a.createdat DESC`, [uid]);
+  res.json(rows);
+});</code></pre>
+
+<h3>Registrar atividade (validação por campo)</h3>
+<pre><code>app.post('/api/atividades', async (req, res) =&gt; {
+  const { usuario_id, tipo_atividade, distancia_percorrida, duracao_atividade, quantidade_calorias } = req.body;
+  const erros = {};
+  if (!['corrida', 'caminhada', 'trilha'].includes(tipo_atividade))
+    erros.tipo_atividade = 'Escolha corrida, caminhada ou trilha.';
+  for (const [campo, v] of Object.entries({ distancia_percorrida, duracao_atividade, quantidade_calorias }))
+    if (!Number.isInteger(Number(v)) || Number(v) &lt;= 0)
+      erros[campo] = 'Informe um número inteiro maior que zero.';
+  if (Object.keys(erros).length) return res.status(400).json({ erros });
+
+  await pool.query(
+    `INSERT INTO tb_atividade (usuario_id, tipo_atividade, distancia_percorrida, duracao_atividade, quantidade_calorias)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [usuario_id, tipo_atividade, distancia_percorrida, duracao_atividade, quantidade_calorias]);
+  res.status(201).json({ ok: true });
+});</code></pre>
+
+<h3>Curtir (toggle) e comentar</h3>
+<pre><code>app.post('/api/atividades/:id/curtir', async (req, res) =&gt; {
+  const { usuario_id } = req.body, id = req.params.id;
+  const del = await pool.query(
+    'DELETE FROM tb_curtida WHERE atividade_id=$1 AND usuario_id=$2', [id, usuario_id]);
+  if (del.rowCount === 0)
+    await pool.query('INSERT INTO tb_curtida (atividade_id, usuario_id) VALUES ($1,$2)', [id, usuario_id]);
+  const { rows } = await pool.query(
+    'SELECT COUNT(*)::int AS total FROM tb_curtida WHERE atividade_id=$1', [id]);
+  res.json({ curti: del.rowCount === 0, total: rows[0].total });
+});
+
+app.get('/api/atividades/:id/comentarios', async (req, res) =&gt; {
+  const { rows } = await pool.query(
+    `SELECT m.id, m.texto, m.createdat, u.nome_usuario
+     FROM tb_comentario m JOIN tb_usuarios u ON u.id = m.usuario_id
+     WHERE m.atividade_id=$1 ORDER BY m.createdat`, [req.params.id]);
+  res.json(rows);
+});
+
+app.post('/api/atividades/:id/comentarios', async (req, res) =&gt; {
+  const { usuario_id, texto } = req.body;
+  if (!texto || !texto.trim()) return res.status(400).json({ erro: 'Comentário vazio.' });
+  if (texto.length &gt; 500) return res.status(400).json({ erro: 'Máximo de 500 caracteres.' });
+  await pool.query(
+    'INSERT INTO tb_comentario (atividade_id, usuario_id, texto) VALUES ($1,$2,$3)',
+    [req.params.id, usuario_id, texto.trim()]);
+  res.status(201).json({ ok: true });
+});</code></pre>
+
+<h3>Excluir atividade</h3>
+<p class="d">Como o schema não tem <code>ON DELETE CASCADE</code>, apagar a atividade direto dá erro de chave estrangeira se houver curtida ou comentário. Apague os filhos primeiro, dentro de uma transação.</p>
+<pre><code>app.delete('/api/atividades/:id', async (req, res) =&gt; {
+  const id = req.params.id, { usuario_id } = req.body;
+  const dono = await pool.query('SELECT usuario_id FROM tb_atividade WHERE id=$1', [id]);
+  if (!dono.rows[0]) return res.status(404).json({ erro: 'Atividade não encontrada.' });
+  if (dono.rows[0].usuario_id !== Number(usuario_id))
+    return res.status(403).json({ erro: 'Você só pode excluir suas atividades.' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM tb_curtida WHERE atividade_id=$1', [id]);
+    await client.query('DELETE FROM tb_comentario WHERE atividade_id=$1', [id]);
+    await client.query('DELETE FROM tb_atividade WHERE id=$1', [id]);
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ erro: 'Erro ao excluir.' });
+  } finally { client.release(); }
+});</code></pre>
+<div class="note warn"><b>Funcionário x cliente:</b> o schema só diferencia pela coluna <code>tipo</code>. O que cada um pode fazer vem do enunciado; confira essa regra antes de decidir quem pode excluir ou ver o quê. Ao editar uma atividade ou usuário, lembre de gravar <code>updatedat = NOW()</code>.</div>
+</div>
+
+<div class="shop">
+<h3>Vitrine e busca</h3>
+<pre><code>app.get('/api/produtos', async (req, res) =&gt; {
+  const termo = '%' + (req.query.busca || '') + '%';
+  const { rows } = await pool.query(
+    'SELECT * FROM produtos WHERE nome ILIKE $1 AND estoque &gt; 0 ORDER BY nome', [termo]);
+  res.json(rows);
+});</code></pre>
+<h3>Finalizar pedido (transação)</h3>
+<p class="d">O servidor busca o preço no banco, trava a linha do produto com <code>FOR UPDATE</code>, confere o estoque e só então grava. Se qualquer item falhar, o <code>ROLLBACK</code> desfaz tudo.</p>
+<pre><code>app.post('/api/pedidos', async (req, res) =&gt; {
+  const { cliente_id, itens } = req.body; // itens: [{ produto_id, quantidade }]
+  if (!Array.isArray(itens) || itens.length === 0)
+    return res.status(400).json({ erro: 'Carrinho vazio.' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    let total = 0; const linhas = [];
+    for (const it of itens) {
+      const { rows } = await client.query(
+        'SELECT preco, estoque FROM produtos WHERE id=$1 FOR UPDATE', [it.produto_id]);
+      if (!rows[0] || rows[0].estoque &lt; it.quantidade) throw new Error('Estoque insuficiente.');
+      total += Number(rows[0].preco) * it.quantidade;
+      linhas.push({ ...it, preco: rows[0].preco });
+      await client.query('UPDATE produtos SET estoque = estoque - $1 WHERE id=$2', [it.quantidade, it.produto_id]);
+    }
+    const ped = await client.query(
+      'INSERT INTO pedidos (cliente_id, total) VALUES ($1,$2) RETURNING id', [cliente_id, total]);
+    for (const l of linhas)
+      await client.query(
+        'INSERT INTO itens_pedido (pedido_id, produto_id, quantidade, preco_unitario) VALUES ($1,$2,$3,$4)',
+        [ped.rows[0].id, l.produto_id, l.quantidade, l.preco]);
+    await client.query('COMMIT');
+    res.status(201).json({ pedido_id: ped.rows[0].id, total });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    res.status(400).json({ erro: e.message });
+  } finally { client.release(); }
+});</code></pre>
+</div>
+</section>
+
+<section id="front" style="--c:var(--l4)">
+<div class="head"><h2>Front-end — app.js</h2><span class="tag">~40 min</span></div>
+
+<div class="social">
+<h3>Renderizar atividade e curtir sem recarregar</h3>
+<p class="d">A distância fica em metros no banco e é convertida só para exibir. Texto de usuário (nome, comentário) entra com <code>textContent</code>, nunca com <code>innerHTML</code>.</p>
+<pre><code>let usuarioAtual = null; // { id, nome, tipo } depois do login
+const km = (m) =&gt; (m / 1000).toFixed(2).replace('.', ',') + ' km';
+
+function criarAtividade(a) {
+  const el = document.createElement('article');
+  const titulo = document.createElement('strong');
+  titulo.textContent = `${a.nome_usuario} · ${a.tipo_atividade}`;
+  const dados = document.createElement('p');
+  dados.textContent = `${km(a.distancia_percorrida)} em ${a.duracao_atividade} min · ${a.quantidade_calorias} kcal`;
+  const btn = document.createElement('button');
+  btn.textContent = (a.curti ? '♥ ' : '♡ ') + a.curtidas;
+  btn.addEventListener('click', () =&gt; curtir(a.id, btn));
+  el.append(titulo, dados, btn);
+  return el;
+}
+
+async function curtir(id, btn) {
+  if (!usuarioAtual) return alert('Faça login para curtir.');
+  const r = await fetch(`/api/atividades/${id}/curtir`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usuario_id: usuarioAtual.id })
+  });
+  const d = await r.json();
+  btn.textContent = (d.curti ? '♥ ' : '♡ ') + d.total;
+}
+
+async function carregarFeed() {
+  const uid = usuarioAtual ? usuarioAtual.id : 0;
+  const lista = await (await fetch('/api/atividades?usuario_id=' + uid)).json();
+  document.getElementById('feed').replaceChildren(...lista.map(criarAtividade));
+}</code></pre>
+</div>
+
+<div class="shop">
+<h3>Carrinho em memória e envio do pedido</h3>
+<p class="d">O carrinho vive no front só para exibição. O que vai para o servidor são ids e quantidades; o total exibido aqui é informativo, quem manda é o servidor.</p>
+<pre><code>const brl = (v) =&gt; Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+let carrinho = []; // [{ produto_id, nome, preco, quantidade }]
+
+function addAoCarrinho(p) {
+  const item = carrinho.find((x) =&gt; x.produto_id === p.id);
+  if (item) item.quantidade++;
+  else carrinho.push({ produto_id: p.id, nome: p.nome, preco: p.preco, quantidade: 1 });
+  renderCarrinho();
+}
+
+function renderCarrinho() {
+  const total = carrinho.reduce((s, i) =&gt; s + Number(i.preco) * i.quantidade, 0);
+  document.getElementById('totalCarrinho').textContent = brl(total);
+  // ... montar a lista de itens com textContent ...
+}
+
+async function finalizarPedido() {
+  if (carrinho.length === 0) return;
+  const r = await fetch('/api/pedidos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cliente_id: usuarioAtual.id,
+      itens: carrinho.map(({ produto_id, quantidade }) =&gt; ({ produto_id, quantidade }))
+    })
+  });
+  const d = await r.json();
+  if (!r.ok) return alert(d.erro);
+  carrinho = []; renderCarrinho(); carregarVitrine();
+}</code></pre>
+</div>
+</section>
+
+<section id="check" style="--c:var(--accent)">
+<div class="head"><h2>Checklist e armadilhas</h2><span class="tag">estratégia</span></div>
+<h3>Ordem sugerida em 3 horas</h3>
+<ul class="ck">
+<li><strong>0h00–0h20:</strong> banco, <code>schema.sql</code>, dados de teste, <code>npm install</code>, pasta <code>public/uploads</code>.</li>
+<li><strong>0h20–1h10:</strong> rotas do <code>server.js</code>, testando cada uma no navegador ou no Postman antes de seguir.</li>
+<li><strong>1h10–1h50:</strong> HTML e CSS essenciais: lista, formulários, modais.</li>
+<li><strong>1h50–2h35:</strong> <code>app.js</code>: fetch, renderização, login, ação principal (curtir ou carrinho).</li>
+<li><strong>2h35–3h00:</strong> validações por campo, teste de ponta a ponta, ajustes.</li>
+</ul>
+
+<h3>Erros comuns, nos dois temas</h3>
+<ul class="ck">
+<li><strong>Pasta <code>public/uploads</code> inexistente:</strong> o Multer falha e a mensagem de erro não ajuda.</li>
+<li><strong><code>NUMERIC</code> e <code>COUNT</code> chegam como string:</strong> use <code>Number()</code> ou <code>::int</code> antes de somar ou comparar.</li>
+<li><strong>Query montada com concatenação:</strong> use sempre <code>$1, $2</code>. Concatenar abre SQL injection.</li>
+<li><strong>Validação só no front:</strong> repita no servidor. Quem corrige a prova pode chamar a API direto.</li>
+<li><strong>Erro genérico:</strong> mensagem específica por campo, não um <code>alert</code> único.</li>
+</ul>
+
+<div class="social"><h3>Específico da rede social</h3>
+<ul class="ck">
+<li><strong>Exclusão sem CASCADE:</strong> apague <code>tb_curtida</code> e <code>tb_comentario</code> antes de <code>tb_atividade</code>, em transação.</li>
+<li><strong>Curtida duplicada:</strong> o <code>UNIQUE</code> protege no banco; não dependa só do botão.</li>
+<li><strong>Unidades:</strong> distância em metros, duração em minutos. Converta só na exibição.</li>
+<li><strong>Tipos fixos:</strong> valide <code>tipo_atividade</code> e <code>tipo</code> do usuário no servidor, igual ao <code>CHECK</code>.</li>
+<li><strong>Conteúdo do usuário:</strong> <code>textContent</code> em nome e comentário.</li>
+</ul></div>
+
+<div class="shop"><h3>Específico do e-commerce</h3>
+<ul class="ck">
+<li><strong>Total vindo do cliente:</strong> nunca confie. Recalcule no servidor com o preço do banco.</li>
+<li><strong>Estoque:</strong> confira dentro da transação, com <code>FOR UPDATE</code>, senão duas compras simultâneas vendem o último item duas vezes.</li>
+<li><strong>Preço histórico:</strong> grave <code>preco_unitario</code> no item do pedido.</li>
+<li><strong>Moeda:</strong> exiba com <code>toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })</code>.</li>
+</ul></div>
+
+<div class="note warn"><b>Aviso honesto:</b> este guia dá a estrutura, mas prova prática avalia se você consegue explicar e adaptar o que escreveu. Digite o código uma vez sem olhar, quebre de propósito, conserte. Quem só copia trava na primeira exigência que fuja do esqueleto.</div>
+</section>
+</main>
+</div>
+<script>
+const body=document.body;
+document.getElementById('bSocial').onclick=()=>{body.dataset.dom='social'};
+document.getElementById('bShop').onclick=()=>{body.dataset.dom='shop'};
+const links=[...document.querySelectorAll('.nav a')];
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id))}}),{rootMargin:'-20% 0px -70% 0px'});
+links.forEach(l=>{const t=document.querySelector(l.getAttribute('href'));if(t)io.observe(t)});
+</script>
+</body>
+</html>
