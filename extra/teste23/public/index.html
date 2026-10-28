@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StreamRedes</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="usuario">
+        <img id="fotoPerfil" class="avatar" src="uploads/logo/logo.jpg" alt="Foto de perfil" />
+        <span id="nomeUsuario">@StreamRedes</span>
+        <button id="btnVerPerfil" class="btn-preto desabilitado">Ver Perfil</button>
+      </div>
+
+      <h1>StreamRedes</h1>
+
+      <button id="btnLogin" class="btn-preto">Login</button>
+    </header>
+
+    <main>
+      <div class="busca">
+        <input id="inputBusca" placeholder="Digite o nome do administrador... ex: @maria" />
+        <img id="btnLupa" src="uploads/icons/lupa.svg" alt="Buscar" />
+      </div>
+
+      <div id="feed"></div>
+    </main>
+
+    <footer>
+      <span>StreamRedes</span>
+      <div class="redes">
+        <img src="uploads/icons/instagram.svg" alt="Instagram" />
+        <img src="uploads/icons/tiktok.svg" alt="TikTok" />
+        <img src="uploads/icons/linkedin.svg" alt="LinkedIn" />
+        <img src="uploads/icons/youtube.svg" alt="YouTube" />
+      </div>
+      <span>Copyright 2026-2027</span>
+    </footer>
+
+    <!-- Modal de login -->
+    <div id="modalLogin" class="overlay oculto">
+      <div class="modal">
+        <div class="modal-topo">
+          <h2>Login</h2>
+          <button id="fecharModal" class="btn-fechar">×</button>
+        </div>
+        <input id="loginUsuario" placeholder="Digite seu nome_usuario" />
+        <span id="erroUsuario" class="erro"></span>
+        <input id="loginSenha" type="password" placeholder="Digite sua senha" />
+        <span id="erroSenha" class="erro"></span>
+        <span id="erroLogin" class="erro"></span>
+        <div class="modal-botoes">
+          <button id="btnCancelar" class="btn-outline">Cancelar</button>
+          <button id="btnConfirmarLogin" class="btn-preto">Login</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menu lateral do administrador -->
+    <aside id="painelPerfil" class="oculto">
+      <div class="painel-topo">
+        <button id="fecharPainel" class="btn-fechar">×</button>
+      </div>
+
+      <p><span id="totalCurtidas">0</span> Likes</p>
+      <p><span id="totalPosts">0</span> Posts</p>
+
+      <button id="btnSeusPosts" class="btn-destaque">Seus posts</button>
+      <button id="btnNovoPost" class="btn-preto">Novo post</button>
+
+      <div id="listaPosts"></div>
+    </aside>
+
+    <!-- Modal de novo post (centralizado, fora do aside) -->
+    <div id="modalPost" class="overlay oculto">
+      <div class="modal">
+        <div class="modal-topo">
+          <h2>Novo post</h2>
+          <button id="fecharModalPost" type="button" class="btn-fechar">×</button>
+        </div>
+
+        <form id="formPost">
+          <label for="campoTexto">Texto</label>
+          <textarea id="campoTexto" maxlength="255" placeholder="O que você quer compartilhar?"></textarea>
+          <span id="erroTexto" class="erro"></span>
+
+          <label>Imagem</label>
+          <label for="campoImagem" class="btn-preto">Escolher arquivo</label>
+          <input id="campoImagem" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" hidden />
+          <span id="nomeArquivo">Nenhum arquivo escolhido</span>
+          <span id="erroImagem" class="erro"></span>
+
+          <div class="modal-botoes">
+            <button id="btnCancelarPost" type="button" class="btn-outline">Cancelar</button>
+            <button type="submit" class="btn-preto">Postar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
